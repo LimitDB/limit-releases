@@ -35,6 +35,8 @@ jobs:
           ref: ${{ github.event.client_payload.sha }}
 
       - uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
