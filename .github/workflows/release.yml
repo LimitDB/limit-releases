@@ -42,7 +42,7 @@ jobs:
           jq --arg v "$NEW_VERSION" '.version=$v' package.json > package.json.tmp && mv package.json.tmp package.json
 
           # Update tauri.conf.json
-          jq --arg v "$NEW_VERSION" '.package.version=$v' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          jq --arg v "$NEW_VERSION" '.version=$v' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
 
           # Commit & push
           git config user.name "github-actions[bot]"
