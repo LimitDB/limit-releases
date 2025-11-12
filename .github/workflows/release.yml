@@ -5,7 +5,57 @@ on:
     types: [on-demand-release]
 
 jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          repository: LimitDB/limit
+          token: ${{ secrets.GH_TOKEN_FOR_CHECKOUT }}
+          ref: ${{ github.event.client_payload.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          # Read version from package.json
+          VERSION=$(jq -r '.version' package.json)
+          echo "Current version: $VERSION"
+
+          # Increment patch version
+          NEW_VERSION=$(echo $VERSION | awk -F. '{printf "%d.%d.%d", $1, $2, $3+1}')
+          echo "New version: $NEW_VERSION"
+
+          # Update package.json
+          jq --arg v "$NEW_VERSION" '.version=$v' package.json > package.json.tmp && mv package.json.tmp package.json
+
+          # Update tauri.conf.json
+          jq --arg v "$NEW_VERSION" '.package.version=$v' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+
+          # Commit & push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json src-tauri/tauri.conf.json
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git push
+
+          # Export version for next job
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+  
   publish-tauri:
+    needs: bump-version
     permissions:
       contents: write
     strategy:
